@@ -1,0 +1,95 @@
+---
+title: "Car Analysis - Regression Model"
+author: "Shelby"
+date: "6/24/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+```
+## Executive Summary 
+The mtcars data set is used to answer the following questions: “Is an automatic or manual transmission better for MPG” and "Quantify the MPG difference between automatic and manual transmissions". The data set includes 32 data points with mpg and transmission data. Based on this data set, it is concluded that a manual transmission leads to a higher mpg. The average increase is approx 7 mpg when going from automatic to manual. Only using transmission data creates a very simplistic model for mpg that cannot give robust data. However, it is an accurate model for only using one variable.
+
+## Data
+For this ananlysis I will be using the mtcars data set, that has 32 data points. The "am" column stores transmission type, with 0 = automatic and 1 = manual. Miles per gallon is stored as "mpg".
+```{r cars}
+head(mtcars)
+any(is.na(mtcars)) #check for NAs in data set 
+summary(mtcars$mpg)
+summary(mtcars$am)
+```
+``` {r plot linear, echo = FALSE}
+# plot data
+plot(mtcars$am, mtcars$mpg)
+```
+
+### Mean mpg by transmission type 
+Automatic 
+```{r mpg0}
+mtcars0 <- mtcars %>% filter(am == 0)
+mean0 <- mean(mtcars0$mpg)
+mean0
+```
+
+Manual 
+```{r mpg1}
+mtcars1 <- mtcars %>% filter(am == 1)
+mean1 <- mean(mtcars1$mpg)
+mean1
+```
+
+By quickly exploring the data it appears that manual cars have a higher average mpg, with a difference of 
+```{r difference, echo = FALSE}
+mean1 - mean0
+```
+. 
+
+## Building the model 
+### Linear Model
+```{r linear}
+fit <- lm(mpg ~ am, mtcars)
+coef(fit)
+```
+For a linear model we get mpg = 17.15 + 7.25*am, which recall from above was our mean mpg for an automatic transmission, and the slope is the difference between automatic and manual. With transmission only being 0 or 1 this model makes sense. 
+``` {r ggplot linear, echo = FALSE}
+# plot data
+g = ggplot(mtcars, aes(x = am, y = mpg),)
+g = g + xlab("transmission: automatic -> manual") + ylab("mpg")
+g = g + geom_point()
+g = g + geom_smooth(method="lm")
+g
+```
+
+When plotted the model shows that it would be a poor indicator of values between 0 and 1, but since a car cannot have a "half" transmission this does not matter. Only having one variable, transmission, does decrease our ability to predict mpg. No matter our input, our results will always be 17.14 or 24.39.
+
+### Residuals 
+```{r linear residuals}
+plot(mtcars$am, resid(fit))
+abline(h =0, lwd =2)
+sum(resid(fit))
+```
+For a model only using transmission to calculate mpg, ours is a good fit. The residuals sum to zero and are evenly distributed. 
+
+### Inference/ Confidence Interval
+```{r intercept inference}
+# Intercept confidence interval 
+sumCoef <- summary(fit)$coefficients
+sumCoef[1,1] + c(-1,1)*qt(0.975, df = fit$df)*sumCoef[1,2]
+```
+```{r slope inference}
+# Intercept confidence interval 
+sumCoef <- summary(fit)$coefficients
+sumCoef[2,1] + c(-2,1)*qt(0.975, df = fit$df)*sumCoef[2,2]
+```
+
+## Conclusion
+“Is an automatic or manual transmission better for MPG”
+A manual transmission leads to a higher average mpg.
+
+"Quantify the MPG difference between automatic and manual transmissions"  
+Automatic transmission to manual averaged an increase in approx 7 mpg.
+
+A more robust model would incorporate other variables, like horsepower, cylinders, weight and more. 
